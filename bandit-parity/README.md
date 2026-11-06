@@ -75,10 +75,25 @@ From the repository root, with `OPENGREP` set to the pinned executable:
 ```sh
 export OPENGREP="${OPENGREP:-$HOME/opengrep-bandit/opengrep_manylinux_x86}"
 "$OPENGREP" --test bandit-parity/rules
+python3 -B -m unittest discover -s bandit-parity -p test_compare.py -v
+python3 -B bandit-parity/compare.py --opengrep "$OPENGREP"
 ```
 
-The comparison command and integrated results will be added after the
-comparison script and rules arrive. No parity result is claimed yet.
+The comparator uses the corpus at `~/opengrep-bandit/bandit-src/examples`,
+Bandit at `~/opengrep-bandit/.venv/bin/bandit`, and the adjacent `rules/`
+directory by default. Use `--corpus`, `--bandit`, and `--rules` to override
+those paths. It runs Bandit with default checks, then selects only the five
+IDs, without changing Bandit's configuration.
+
+Optional machine-readable and raw tool evidence stays outside the checkout:
+
+```sh
+python3 -B bandit-parity/compare.py --opengrep "$OPENGREP" \
+  --json-report "$HOME/opengrep-bandit/parity.json" \
+  --evidence-dir "$HOME/opengrep-bandit/parity-raw"
+```
+
+Integrated comparison results are pending. No parity result is claimed yet.
 
 ## Coverage limits
 
