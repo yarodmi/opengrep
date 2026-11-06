@@ -1,7 +1,9 @@
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("compare", Path(__file__).with_name("compare.py"))
 c = importlib.util.module_from_spec(spec)
@@ -54,6 +56,47 @@ class ComparisonTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             c.validate_coverage({"errors": [], "metrics": {}}, {"paths": {"scanned": []}, "errors": []},
                                 Path("/not-an-existing-corpus"))
+
+    def test_missing_paths_and_unexpected_errors_fail(self):
+        with tempfile.TemporaryDirectory(dir=c.HOME) as tmp:
+            root = Path(tmp)
+            for name in [*c.REFERENCE_ERRORS, "valid.py"]:
+                (root / name).touch()
+            paths = [str(p) for p in root.glob("*.py")]
+            bandit = {
+                "errors": [{"filename": str(root / name),
+                            "reason": "syntax error while parsing AST from file"}
+                           for name in c.REFERENCE_ERRORS],
+                "metrics": {p: {} for p in paths},
+            }
+            opengrep = {"paths": {"scanned": paths}, "errors": []}
+            self.assertEqual(c.validate_coverage(bandit, opengrep, root)["owed_python_files"], 4)
+            opengrep["paths"]["scanned"] = paths[:-1]
+            with self.assertRaises(ValueError):
+                c.validate_coverage(bandit, opengrep, root)
+            opengrep["paths"]["scanned"] = paths
+            opengrep["errors"] = [{"type": "Timeout", "path": str(root / "valid.py")}]
+            with self.assertRaises(ValueError):
+                c.validate_coverage(bandit, opengrep, root)
+            bandit["errors"] = []
+            opengrep["errors"] = []
+            with self.assertRaises(ValueError):
+                c.validate_coverage(bandit, opengrep, root)
+
+    def test_json_output_file_avoids_progress_and_rejects_invalid_results(self):
+        with tempfile.TemporaryDirectory(dir=c.HOME) as tmp:
+            output = Path(tmp) / "raw.json"
+            for body, succeeds in [('{"results": []}', True), ("{}", False), ("bad-json", False)]:
+                def fake_run(command, allowed):
+                    self.assertEqual(command[-2:], ["--output", output])
+                    output.write_text(body)
+                    return c.subprocess.CompletedProcess(command, 0, "Working...\n", "")
+                with self.subTest(body=body), patch.object(c, "run", fake_run):
+                    if succeeds:
+                        self.assertEqual(c.run_json(["tool"], output), {"results": []})
+                    else:
+                        with self.assertRaises(ValueError):
+                            c.run_json(["tool"], output)
 
 
 if __name__ == "__main__":
