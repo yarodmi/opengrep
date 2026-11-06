@@ -6,7 +6,7 @@ and B324. The reference is Bandit 1.9.4 with default settings on its complete
 
 | Check | Behavior |
 | --- | --- |
-| B602 | Subprocess calls with `shell=True` |
+| B602 | Subprocess calls with a truthy `shell` argument |
 | B307 | `eval` calls |
 | B301 | Pickle deserialization |
 | B506 | Unsafe YAML loading |
@@ -93,15 +93,20 @@ python3 -B bandit-parity/compare.py --opengrep "$OPENGREP" \
   --evidence-dir "$HOME/opengrep-bandit/parity-raw"
 ```
 
-Integrated comparison results are pending. No parity result is claimed yet.
+Exit codes: `0` means equal observed findings with accounted corpus coverage;
+`1` means finding differences; `2` means invalid tools, provenance, output, or
+incomplete evidence. Exit `0` does not mean both parsers accepted every file.
 
 ## Coverage limits
 
 The complete pinned corpus is authoritative, including nonfindings. Default
 Bandit reports syntax errors for `new_candidates-none.py`, `nonsense.py`, and
-`nonsense2.py`; do not edit or exclude those files. Compare observed findings
-and report parser errors separately, including any Opengrep extras in files
-Bandit skipped. Unexpected operational or parsing errors block validation.
+`nonsense2.py`; do not edit or exclude those files. Opengrep reports
+`PartialParsing` and a parser skip for `nonsense2.py`, while listing all 94
+Python files as scanned. Both tools therefore have known parsing limits.
+Compare observed findings and report parser errors separately, including any
+Opengrep extras in files Bandit skipped. Additional operational or parsing
+errors block validation.
 
 These results cover only the five checks on this corpus, not arbitrary Python
 programs or other Bandit checks. Passing fixtures alone is not parity evidence.
