@@ -1,0 +1,24 @@
+rules:
+  - id: B506
+    languages: [python]
+    severity: WARNING
+    message: Use of unsafe yaml load. Allows instantiation of arbitrary objects. Consider yaml.safe_load().
+    metadata:
+      bandit-id: B506
+      category: security
+      technology: [python, pyyaml]
+      cwe: "CWE-20: Improper Input Validation"
+      references:
+        - https://bandit.readthedocs.io/en/1.9.4/plugins/b506_yaml_load.html
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader, ...)
+      - pattern-not: yaml.load(..., Loader=yaml.CSafeLoader, ...)
+      - pattern-not: yaml.load(..., Loader=SafeLoader, ...)
+      - pattern-not: yaml.load(..., Loader=CSafeLoader, ...)
+      - pattern-not: yaml.load($STREAM, yaml.SafeLoader, ...)
+      - pattern-not: yaml.load($STREAM, yaml.CSafeLoader, ...)
+      - pattern-not: yaml.load($STREAM, SafeLoader, ...)
+      - pattern-not: yaml.load($STREAM, CSafeLoader, ...)
+      # Bandit honors bare and check-specific nosec comments.
+      - pattern-not-regex: '(?m)^.*#\s*nosec\b(?:\s*(?:#.*)?$|(?=[^\n]*\b(?:B506|yaml_load)\b)[^\n]*)'
