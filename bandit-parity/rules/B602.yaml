@@ -1,0 +1,33 @@
+rules:
+  - id: B602
+    languages: [python]
+    message: Subprocess invocation with a truthy shell argument.
+    severity: WARNING
+    metadata:
+      bandit-version: 1.9.4
+      cwe: CWE-78
+    options:
+      constant_propagation: false
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern-either:
+                  - pattern: subprocess.Popen($CMD, ..., shell=$SHELL, ...)
+                  - pattern: subprocess.call($CMD, ..., shell=$SHELL, ...)
+                  - pattern: subprocess.check_call($CMD, ..., shell=$SHELL, ...)
+                  - pattern: subprocess.check_output($CMD, ..., shell=$SHELL, ...)
+                  - pattern: subprocess.run($CMD, ..., shell=$SHELL, ...)
+              - pattern-not: $F(..., shell=False, ...)
+              - pattern-not: $F(..., shell=None, ...)
+              - pattern-not: $F(..., shell=0, ...)
+              - pattern-not: $F(..., shell=0.0, ...)
+              - pattern-not: $F(..., shell="", ...)
+              - pattern-not: $F(..., shell=[], ...)
+              - pattern-not: $F(..., shell={}, ...)
+              - focus-metavariable: $SHELL
+      # Bandit suppresses either the call's first line or the shell-value line.
+      # Quoted strings are consumed before comments, so '#nosec' is not a comment.
+      - pattern-not-regex: |-
+          (?m)^[ \t]*(?:[^"'#\n]|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')*#[^\n]*?\bnosec:?[ \t]*(?=[^#\n]*\b(?:B602|subprocess_popen_with_shell_equals_true)\b|(?:$|#|\())[^\n]*
+      - pattern-not-regex: |-
+          (?m)^[ \t]*(?:[^"'#\n]|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')*(?:\(|,)[ \t]*#[^\n]*?\bnosec:?[ \t]*(?=[^#\n]*\b(?:B602|subprocess_popen_with_shell_equals_true)\b|(?:$|#|\())[^\n]*(?:\n[ \t]+[^)\n]*)*\)

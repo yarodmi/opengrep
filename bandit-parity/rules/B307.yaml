@@ -1,0 +1,9 @@
+rules:
+  - id: B307
+    languages: [python]
+    message: Use of possibly insecure eval; consider ast.literal_eval.
+    severity: WARNING
+    metadata:
+      bandit-version: 1.9.4
+      cwe: CWE-78
+    pattern: eval(...)
