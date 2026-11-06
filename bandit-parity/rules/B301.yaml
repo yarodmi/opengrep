@@ -1,0 +1,28 @@
+rules:
+  - id: B301
+    languages: [python]
+    severity: WARNING
+    message: Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data.
+    metadata:
+      bandit-id: B301
+      category: security
+      technology: [python]
+      cwe: "CWE-502: Deserialization of Untrusted Data"
+      references:
+        - https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b301-pickle
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads(...)
+          - pattern: pickle.load(...)
+          - pattern: pickle.Unpickler(...)
+          - pattern: dill.loads(...)
+          - pattern: dill.load(...)
+          - pattern: dill.Unpickler(...)
+          - pattern: shelve.open(...)
+          - pattern: shelve.DbfilenameShelf(...)
+          - pattern: jsonpickle.decode(...)
+          - pattern: jsonpickle.unpickler.decode(...)
+          - pattern: jsonpickle.unpickler.Unpickler(...)
+          - pattern: pandas.read_pickle(...)
+      # Bandit honors bare and check-specific nosec comments.
+      - pattern-not-regex: '(?m)^.*#\s*nosec\b(?:\s*(?:#.*)?$|(?=[^\n]*\bB301\b)[^\n]*)'
