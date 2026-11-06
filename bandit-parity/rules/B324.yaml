@@ -1,0 +1,41 @@
+rules:
+  - id: B324
+    languages: [python]
+    severity: WARNING
+    message: Use of a weak hashlib or crypt hash.
+    metadata:
+      bandit-id: B324
+      references:
+        - https://bandit.readthedocs.io/en/1.9.4/plugins/b324_hashlib.html
+    options:
+      constant_propagation: false
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: hashlib.md4(...)
+              - pattern: hashlib.md5(...)
+              - pattern: hashlib.sha(...)
+              - pattern: hashlib.sha1(...)
+              - patterns:
+                  - pattern-either:
+                      - pattern: hashlib.new($NAME, ...)
+                      - pattern: hashlib.new(name=$NAME, ...)
+                  - metavariable-regex:
+                      metavariable: $NAME
+                      regex: (?i)^["'](?:md4|md5|sha|sha1)["']$
+          # Bandit accepts only a missing keyword, True, or the string "True".
+          - pattern-either:
+              - patterns:
+                  - pattern: hashlib.$FUNC(...)
+                  - pattern-not: hashlib.$FUNC(..., usedforsecurity=$USED, ...)
+              - pattern: hashlib.$FUNC(..., usedforsecurity=True, ...)
+              - pattern: hashlib.$FUNC(..., usedforsecurity="True", ...)
+      - patterns:
+          - pattern-either:
+              - pattern: crypt.crypt($PASSWORD, $METHOD, ...)
+              - pattern: crypt.crypt(..., salt=$METHOD, ...)
+              - pattern: crypt.mksalt($METHOD, ...)
+              - pattern: crypt.mksalt(method=$METHOD, ...)
+          - metavariable-regex:
+              metavariable: $METHOD
+              regex: ^(?:(?:.*\.)?(?:METHOD_CRYPT|METHOD_MD5|METHOD_BLOWFISH)|["'](?:METHOD_CRYPT|METHOD_MD5|METHOD_BLOWFISH)["'])$
